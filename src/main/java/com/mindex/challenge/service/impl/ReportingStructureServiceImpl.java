@@ -29,23 +29,26 @@ public class ReportingStructureServiceImpl implements ReportingStructureService 
         if (employee == null) {
             throw new RuntimeException("Invalid employeeId: " + id);
         }
+        Employee fullEmployee = restoreDirectReports(employee);
 
         ReportingStructure reportingStructure = new ReportingStructure();
-        reportingStructure.setEmployee(employee);
-        reportingStructure.setNumberOfReports(calculateReports(employee));
+        reportingStructure.setEmployee(fullEmployee);
+        reportingStructure.setNumberOfReports(calculateReports(fullEmployee));
 
         return reportingStructure;
     }
 
     private int calculateReports(Employee employee) {
         List<Employee> allReports = new ArrayList<>();
-        List<Employee> reportsToProcess = new ArrayList<>(employee.getDirectReports());
+        List<Employee> reportsToProcess = new ArrayList<>();
+        if (employee.getDirectReports() != null) {
+            reportsToProcess.addAll(employee.getDirectReports());
+        }
         while(!reportsToProcess.isEmpty()) {
             Employee processingReport = reportsToProcess.get(0);
-            processingReport = employeeRepository.findByEmployeeId(processingReport.getEmployeeId());
             List<Employee> embeddedDirectReports = processingReport.getDirectReports();
             if (embeddedDirectReports != null) {
-                for (Employee report : processingReport.getDirectReports()) {
+                for (Employee report : embeddedDirectReports) {
                     if (!reportsToProcess.contains(report)) {
                         if (!allReports.contains(report)) {
                             reportsToProcess.add(report);
@@ -58,4 +61,17 @@ public class ReportingStructureServiceImpl implements ReportingStructureService 
         }
         return allReports.size();
     }
+
+    private Employee restoreDirectReports(Employee employee) {
+        if (employee.getDirectReports() != null) {
+            List<Employee> restoredDirectReports = new ArrayList<>();
+            for (Employee report : employee.getDirectReports()) {
+                Employee fullReport = employeeRepository.findByEmployeeId(report.getEmployeeId());
+                restoredDirectReports.add(restoreDirectReports(fullReport));
+            }
+            employee.setDirectReports(restoredDirectReports);
+        }
+        return employee;
+    }
+
 }
