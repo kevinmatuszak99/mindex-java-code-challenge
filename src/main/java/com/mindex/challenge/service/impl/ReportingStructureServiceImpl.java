@@ -20,6 +20,7 @@ public class ReportingStructureServiceImpl implements ReportingStructureService 
     @Autowired
     private EmployeeRepository employeeRepository;
 
+    // Calculates the ReportingStructure on the fly each time
     @Override
     public ReportingStructure calculate(String id) {
         LOG.debug("Calculating employee reporting structure with id [{}]", id);
@@ -38,7 +39,10 @@ public class ReportingStructureServiceImpl implements ReportingStructureService 
         return reportingStructure;
     }
 
+    // Calculates how many reports the employee has
     private int calculateReports(Employee employee) {
+        // Keep track of separate lists so that loops and overlaps are not
+        // counted multiple times when calculating
         List<Employee> allReports = new ArrayList<>();
         List<Employee> reportsToProcess = new ArrayList<>();
         if (employee.getDirectReports() != null) {
@@ -62,6 +66,7 @@ public class ReportingStructureServiceImpl implements ReportingStructureService 
         return allReports.size();
     }
 
+    // Recursive method to show full breadth of direct reports rather than just employee number
     private Employee restoreDirectReports(Employee employee) {
         if (employee.getDirectReports() != null) {
             List<Employee> restoredDirectReports = new ArrayList<>();
